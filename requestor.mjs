@@ -34,14 +34,23 @@ const whiteListNames = ["imperfect-lunchroom"];
       console.log("Starting long-running task...");
       
       // Sleep for 30 seconds then check node version
-      const output = await exe.run(`
+      let remoteProcess = await exe.runAndStream(`
         echo "Task started at $(date)"
-        sleep 30s
-        echo "After 30 second delay at $(date)"
+        sleep 5s
+        echo "After 5 second delay at $(date)"
+        sleep 10s
+        echo "After 10 second delay at $(date)"
         node -v
       `);
-      
-      return output.stdout;
+    
+      remoteProcess.stderr.subscribe((data) => console.error("stderr: ", data));
+
+      await new Promise((resolve) => {
+        remoteProcess.stdout.subscribe({
+          next: (data) => console.log("stdout: ", data),
+          complete: () => resolve(),
+        });
+      });
     });
     console.log("Task result:", result);
   } catch (err) {
