@@ -1,16 +1,20 @@
-import { TaskExecutor } from "@golem-sdk/task-executor";
 import { pinoPrettyLogger } from "@golem-sdk/pino-logger";
-import { GolemNetwork, OfferProposalFilterFactory } from "@golem-sdk/golem-js";
+import { GolemNetwork } from "@golem-sdk/golem-js";
 
-const whiteListIds = ["0x2f27061fc2e4f16d2f4cd99f93fbb653b46e2ecb"];
+const whiteListWalletAddresses = [
+  "0x71be8a8b65ded3549305da4c8f4cf9eceb17e647"
+];
+
+function filterByWalletAddress(whiteListWalletAddresses) {
+  return (offerProposal) => {
+    return whiteListWalletAddresses.includes(offerProposal.provider.walletAddress);
+  }
+}
 
 (async function main() {
   const glm = new GolemNetwork({
-    logger: pinoPrettyLogger({ level: "info" }),
-    api: { key: "03ced07404254a00ad00f52613060551" },
-    // Optional: select payment network.
-    // Testnets:  holesky (default), sepolia, rinkeby, amoy
-    // Mainnets:  mainnet, polygon
+    logger: pinoPrettyLogger({ level: "debug" }),
+    api: { key: "eb9d0e5f5f144a7a8267c715af5d3300" },
     payment: { network: "hoodi" },
   });
   try {
@@ -19,18 +23,26 @@ const whiteListIds = ["0x2f27061fc2e4f16d2f4cd99f93fbb653b46e2ecb"];
     const rental = await glm.oneOf({
       order: {
         demand: {
-          workload: { imageTag: "golem/alpine:latest" },
+          
+          workload: {
+            //capabilities: ["!exp:gpu"],
+            runtime: {
+              name: "test", // for now, at least
+              version: "0.0.1",
+            },
+            imageTag: "golem/alpine:latest",
+          },
         },
         // You have to be now explicit about about your terms and expectations from the market
         market: {
-          rentHours: 15 / 60,
+          rentHours: 2,
           pricing: {
             model: "linear",
             maxStartPrice: 1.0,
             maxCpuPerHourPrice: 10.0,
             maxEnvPerHourPrice: 5.0,
           },
-          //offerProposalFilter: OfferProposalFilterFactory.allowProvidersById(whiteListIds),
+          offerProposalFilter: filterByWalletAddress(whiteListWalletAddresses),
         },
       },
     });
