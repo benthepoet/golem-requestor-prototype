@@ -20,8 +20,19 @@ if (whiteListWalletAddresses.length > 0) {
       network: "amoy"  // Polygon Amoy testnet
     },
   });
+
   try {
     await glm.connect();
+
+    // Create AbortController for cancellation
+    const abortController = new AbortController();
+    
+    // Set cancellation timeout (e.g., 30 seconds)
+    const TIMEOUT_MS = 30000; // 30 seconds
+    const cancelTimeout = setTimeout(() => {
+      console.log(`⏰ Cancelling order after ${TIMEOUT_MS/1000} seconds...`);
+      abortController.abort();
+    }, TIMEOUT_MS);
 
     const rental = await glm.oneOf({
       order: {
@@ -47,6 +58,8 @@ if (whiteListWalletAddresses.length > 0) {
           offerProposalFilter,
         },
       },
+      // Pass abort signal to the rental
+      signalOrTimeout: abortController.signal,
     });
 
     const exe = await rental.getExeUnit();
@@ -62,7 +75,17 @@ if (whiteListWalletAddresses.length > 0) {
       echo -n 'Hello from stdout yet again' >&1
       echo -n 'Hello from stderr yet again' >&2
       `,
+      {
+        // Pass abort signal to the command execution
+        signalOrTimeout: abortController.signal
+      }
     );
+
+    // Handle cancellation for remote process
+    abortController.signal.addEventListener('abort', () => {
+      console.log("🛑 Cancelling remote process...");
+      remoteProcess.cancel();
+    });
     
     remoteProcess.stdout
       .subscribe((data) => console.log("stdout>", data));
@@ -72,10 +95,19 @@ if (whiteListWalletAddresses.length > 0) {
 
     await remoteProcess.waitForExit();
     await rental.stopAndFinalize();
+
   } catch (error) {
-    console.error("Failed to execute work:", error);
+    if (abortController.signal.aborted) {
+      console.log("🛑 Order was cancelled due to timeout");
+    } else if (error.name === 'AbortError') {
+      console.log("🛑 Order was cancelled");
+    } else {
+      console.error("❌ Failed to execute work:", error);
+    }
   } finally {
+    clearTimeout(cancelTimeout);
     await glm.disconnect();
+    console.log("🔄 Disconnected from Golem Network");
   }
 })();
 
