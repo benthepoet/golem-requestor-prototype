@@ -1,21 +1,24 @@
+import config from "config";
 import { pinoPrettyLogger } from "@golem-sdk/pino-logger";
 import { GolemNetwork } from "@golem-sdk/golem-js";
 
-const whiteListWalletAddresses = [
-  "0x71be8a8b65ded3549305da4c8f4cf9eceb17e647"
-];
+let offerProposalFilter = null;
 
-function filterByWalletAddress(whiteListWalletAddresses) {
-  return (offerProposal) => {
-    return whiteListWalletAddresses.includes(offerProposal.provider.walletAddress);
-  }
+// Load whitelist wallet addresses from configuration
+const whiteListWalletAddresses = config.get("whiteListWalletAddresses");
+if (whiteListWalletAddresses.length > 0) {
+  offerProposalFilter = filterByWalletAddress(whiteListWalletAddresses);
 }
 
 (async function main() {
   const glm = new GolemNetwork({
     logger: pinoPrettyLogger({ level: "debug" }),
-    api: { key: "eb9d0e5f5f144a7a8267c715af5d3300" },
-    payment: { network: "hoodi" },
+    api: { 
+      key: config.get("apiKey")
+    },
+    payment: { 
+      network: "amoy"  // Polygon Amoy testnet
+    },
   });
   try {
     await glm.connect();
@@ -23,13 +26,12 @@ function filterByWalletAddress(whiteListWalletAddresses) {
     const rental = await glm.oneOf({
       order: {
         demand: {
-          
           workload: {
             //capabilities: ["!exp:gpu"],
-            runtime: {
-              name: "test", // for now, at least
-              version: "0.0.1",
-            },
+            // runtime: {
+            //   name: "test", // for now, at least
+            //   version: "0.0.1",
+            // },
             imageTag: "golem/alpine:latest",
           },
         },
@@ -42,7 +44,7 @@ function filterByWalletAddress(whiteListWalletAddresses) {
             maxCpuPerHourPrice: 10.0,
             maxEnvPerHourPrice: 5.0,
           },
-          offerProposalFilter: filterByWalletAddress(whiteListWalletAddresses),
+          offerProposalFilter,
         },
       },
     });
@@ -59,3 +61,9 @@ function filterByWalletAddress(whiteListWalletAddresses) {
     await glm.disconnect();
   }
 })();
+
+function filterByWalletAddress(whiteListWalletAddresses) {
+  return (offerProposal) => {
+    return whiteListWalletAddresses.includes(offerProposal.provider.walletAddress);
+  }
+}
