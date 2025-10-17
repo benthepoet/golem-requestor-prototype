@@ -21,18 +21,20 @@ if (whiteListWalletAddresses.length > 0) {
     },
   });
 
+  // Create AbortController for cancellation
+  const abortController = new AbortController();
+  
+  // Set cancellation timeout (e.g., 30 seconds)
+  const TIMEOUT_MS = 30000; // 30 seconds
+  const cancelTimeout = setTimeout(() => {
+    console.log(`⏰ Cancelling order after ${TIMEOUT_MS/1000} seconds...`);
+    abortController.abort();
+  }, TIMEOUT_MS);
+
   try {
     await glm.connect();
 
-    // Create AbortController for cancellation
-    const abortController = new AbortController();
     
-    // Set cancellation timeout (e.g., 30 seconds)
-    const TIMEOUT_MS = 30000; // 30 seconds
-    const cancelTimeout = setTimeout(() => {
-      console.log(`⏰ Cancelling order after ${TIMEOUT_MS/1000} seconds...`);
-      abortController.abort();
-    }, TIMEOUT_MS);
 
     const rental = await glm.oneOf({
       order: {
