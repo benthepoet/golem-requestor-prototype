@@ -49,12 +49,29 @@ if (whiteListWalletAddresses.length > 0) {
       },
     });
 
-    // You will work with exe-unit objects instead of "executor"
-    await rental
-      .getExeUnit()
-      .then((exe) => exe.run("echo 'Hello World'"))
-      .then((res) => console.log(res.stdout));
+    const exe = await rental.getExeUnit();
+    const remoteProcess = await exe.runAndStream(
+      `
+      sleep 1
+      echo -n 'Hello from stdout' >&1
+      echo -n 'Hello from stderr' >&2
+      sleep 1
+      echo -n 'Hello from stdout again' >&1
+      echo -n 'Hello from stderr again' >&2
+      sleep 1
+      echo -n 'Hello from stdout yet again' >&1
+      echo -n 'Hello from stderr yet again' >&2
+      `,
+    );
+    
+    remoteProcess.stdout
+      .subscribe((data) => console.log("stdout>", data));
 
+    remoteProcess.stderr
+      .subscribe((data) => console.error("stderr>", data));
+
+    await remoteProcess.waitForExit();
+    await rental.stopAndFinalize();
   } catch (error) {
     console.error("Failed to execute work:", error);
   } finally {
