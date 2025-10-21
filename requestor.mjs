@@ -66,24 +66,13 @@ if (whiteListWalletAddresses.length > 0) {
       sleep 1
       echo -n 'Hello from stdout' >&1
       echo -n 'Hello from stderr' >&2
-      sleep 1
-      echo -n 'Hello from stdout again' >&1
-      echo -n 'Hello from stderr again' >&2
-      sleep 1
-      echo -n 'Hello from stdout yet again' >&1
-      echo -n 'Hello from stderr yet again' >&2
+      sleep 10m
       `,
       {
         // Pass abort signal to the command execution
         signalOrTimeout: abortController.signal
       }
     );
-
-    // Handle cancellation for remote process
-    abortController.signal.addEventListener('abort', () => {
-      console.log("🛑 Cancelling remote process...");
-      remoteProcess.cancel();
-    });
     
     remoteProcess.stdout
       .subscribe((data) => console.log("stdout>", data));
