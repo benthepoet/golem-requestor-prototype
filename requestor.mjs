@@ -2,8 +2,6 @@ import { pinoPrettyLogger } from "@golem-sdk/pino-logger";
 import { GolemNetwork } from "@golem-sdk/golem-js";
 
 const whiteListWalletAddresses = [
-  //"0x8b327753523dcad1d5eff3f8132e6d127d16f108"
-  //"0x2f27061fc2e4f16d2f4cd99f93fbb653b46e2ecb"
   "0x819ab2601273ca539240189d252e2d6fb2e97d71"
 ];
 
@@ -25,12 +23,9 @@ function filterByWalletAddress(whiteListWalletAddresses) {
     const rental = await glm.oneOf({
       order: {
         demand: {
-          
           workload: {
-            //capabilities: ["!exp:gpu"],
             runtime: {
-              name: "test", // for now, at least
-              //version: "0.0.1",
+              name: "test",
             },
             imageTag: "golem/alpine:latest",
           },
