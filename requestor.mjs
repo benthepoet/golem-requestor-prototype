@@ -34,17 +34,13 @@ if (whiteListWalletAddresses.length > 0) {
   try {
     await glm.connect();
 
-    
-
     const rental = await glm.oneOf({
       order: {
         demand: {
           workload: {
-            //capabilities: ["!exp:gpu"],
-            // runtime: {
-            //   name: "test", // for now, at least
-            //   version: "0.0.1",
-            // },
+            runtime: {
+              name: "test",
+            },
             imageTag: "golem/alpine:latest",
           },
         },
@@ -97,7 +93,6 @@ if (whiteListWalletAddresses.length > 0) {
 
     await remoteProcess.waitForExit();
     await rental.stopAndFinalize();
-
   } catch (error) {
     if (abortController.signal.aborted) {
       console.log("🛑 Order was cancelled due to timeout");
