@@ -22,13 +22,13 @@ if (whiteListWalletAddresses.length > 0) {
   });
 
   // Create AbortController for cancellation
-  const abortController = new AbortController();
-  
-  // Set cancellation timeout (e.g., 30 seconds)
-  const TIMEOUT_MS = 30000; // 30 seconds
+  const shutdown = new AbortController();
+
+  // Set cancellation timeout (e.g., 5 minutes)
+  const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
   const cancelTimeout = setTimeout(() => {
     console.log(`⏰ Cancelling order after ${TIMEOUT_MS/1000} seconds...`);
-    abortController.abort();
+    shutdown.abort();
   }, TIMEOUT_MS);
 
   try {
@@ -39,7 +39,7 @@ if (whiteListWalletAddresses.length > 0) {
         demand: {
           workload: {
             runtime: {
-              name: "test",
+              name: "salad",
             },
             imageTag: "golem/alpine:latest",
           },
@@ -57,33 +57,32 @@ if (whiteListWalletAddresses.length > 0) {
         },
       },
       // Pass abort signal to the rental
-      signalOrTimeout: abortController.signal,
+      signalOrTimeout: shutdown.signal,
     });
 
-    const exe = await rental.getExeUnit();
-    const remoteProcess = await exe.runAndStream(
-      `
-      sleep 1
-      echo -n 'Hello from stdout' >&1
-      echo -n 'Hello from stderr' >&2
-      sleep 10m
-      `,
-      {
-        // Pass abort signal to the command execution
-        signalOrTimeout: abortController.signal
-      }
-    );
-    
-    remoteProcess.stdout
-      .subscribe((data) => console.log("stdout>", data));
+    try {
+      const exe = await rental.getExeUnit();
+      const remoteProcess = await exe.runAndStream(
+        'ef8876ed-509d-41e4-824c-62d558ed0027', 
+        [JSON.stringify({ duration: 120 })],
+        {
+          // Pass abort signal to the command execution
+          signalOrTimeout: shutdown.signal
+        }
+      );
+      
+      remoteProcess.stdout
+        .subscribe((data) => console.log("stdout>", data));
 
-    remoteProcess.stderr
-      .subscribe((data) => console.error("stderr>", data));
+      remoteProcess.stderr
+        .subscribe((data) => console.error("stderr>", data));
 
-    await remoteProcess.waitForExit();
-    await rental.stopAndFinalize();
+      await remoteProcess.waitForExit();
+    } finally {
+      await rental.stopAndFinalize();
+    }
   } catch (error) {
-    if (abortController.signal.aborted) {
+    if (shutdown.signal.aborted) {
       console.log("🛑 Order was cancelled due to timeout");
     } else if (error.name === 'AbortError') {
       console.log("🛑 Order was cancelled");
