@@ -12,7 +12,7 @@ This project demonstrates how to use the Golem Network JavaScript SDK to lease c
 
 1. **Clone the repository:**
    ```sh
-   git clone <this-repo-url>
+   git clone https://github.com/benthepoet/golem-requestor-prototype
    cd golem-requestor-prototype
    ```
 
