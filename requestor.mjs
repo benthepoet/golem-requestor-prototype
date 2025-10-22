@@ -64,7 +64,7 @@ if (whiteListWalletAddresses.length > 0) {
       const exe = await rental.getExeUnit();
       const remoteProcess = await exe.runAndStream(
         'ef8876ed-509d-41e4-824c-62d558ed0027', 
-        [JSON.stringify({ duration: 120 })],
+        [JSON.stringify({ duration: 120 })], // Run for 120 seconds
         {
           // Pass abort signal to the command execution
           signalOrTimeout: shutdown.signal
